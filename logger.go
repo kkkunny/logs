@@ -46,30 +46,78 @@ var logLevelStyleMap = [...]color.Style{
 
 // Logger 日志管理器
 type Logger struct {
-	level    LogLevel
-	writer   *log.Logger
+	level  LogLevel
+	values *linkedhashmap.LinkedHashMap[string, string]
+	writer *log.Logger
 }
 
 // DefaultLogger 默认日志管理器
-func DefaultLogger(debug bool) *Logger {
+func DefaultLogger(debug bool, values ...any) *Logger {
 	if debug {
-		return NewLogger(LogLevelDebug, os.Stdout)
+		return NewLogger(LogLevelDebug, os.Stdout, values...)
 	}
-	return NewLogger(LogLevelInfo, os.Stdout)
+	return NewLogger(LogLevelInfo, os.Stdout, values...)
 }
 
 // NewLogger 新建日志管理器
-func NewLogger(level LogLevel, writer io.Writer) *Logger {
+func NewLogger(level LogLevel, writer io.Writer, values ...any) *Logger {
+	if len(values)%2 != 0 {
+		panic("The length of the values must be an even number")
+	}
+	valueMap := linkedhashmap.NewLinkedHashMap[string, string]()
+	for i, value := range values {
+		if i%2 != 0 {
+			valueMap.Set(values[i-1].(string), fmt.Sprintf("%v", value))
+		}
+	}
 	return &Logger{
-		level:    level,
-		writer:   log.New(writer, "", 0),
+		level:  level,
+		values: valueMap,
+		writer: log.New(writer, "", 0),
+	}
+}
+
+func (self *Logger) NewGroup(values ...any) *Logger {
+	if len(values)%2 != 0 {
+		panic("The length of the values must be an even number")
+	}
+	valueMap := linkedhashmap.NewLinkedHashMap[string, string]()
+	for iter := self.values.Begin(); iter != nil; iter.Next() {
+		valueMap.Set(iter.Key(), iter.Value())
+		if !iter.HasNext() {
+			break
+		}
+	}
+	for i, value := range values {
+		if i%2 != 0 {
+			valueMap.Set(values[i-1].(string), fmt.Sprintf("%v", value))
+		}
+	}
+	return &Logger{
+		level:  self.level,
+		values: valueMap,
+		writer: self.writer,
 	}
 }
 
 // 输出
 func (self *Logger) output(level LogLevel, pos string, values *linkedhashmap.LinkedHashMap[string, string]) error {
-	var valueBuf strings.Builder
+	var globalValueBuf strings.Builder
 	var i int
+	for iter := self.values.Begin(); iter != nil; iter.Next() {
+		globalValueBuf.WriteByte('[')
+		globalValueBuf.WriteString(iter.Key())
+		globalValueBuf.WriteByte(']')
+		globalValueBuf.WriteString(iter.Value())
+		if !iter.HasNext() {
+			break
+		}
+		globalValueBuf.WriteString(" | ")
+		i++
+	}
+
+	var valueBuf strings.Builder
+	i = 0
 	for iter := values.Begin(); iter != nil; iter.Next() {
 		valueBuf.WriteString(iter.Key())
 		valueBuf.WriteByte('=')
@@ -86,19 +134,21 @@ func (self *Logger) output(level LogLevel, pos string, values *linkedhashmap.Lin
 	writer := self.writer.Writer()
 	if writer == os.Stdout || writer == os.Stderr {
 		suffix := fmt.Sprintf(
-			"| %s | %s | %s",
+			"| %s | %s | %s | %s",
 			timeStr,
 			pos,
+			globalValueBuf.String(),
 			valueBuf.String(),
 		)
 		suffix = logLevelColorMap[level].Text(suffix)
 		s = logLevelStyleMap[level].Sprintf(logLevelStringMap[level]) + suffix
 	} else {
 		s = fmt.Sprintf(
-			"%s| %s | %s | %s",
+			"%s| %s | %s | %s | %s",
 			logLevelStringMap[level],
 			timeStr,
 			pos,
+			globalValueBuf.String(),
 			valueBuf.String(),
 		)
 	}
