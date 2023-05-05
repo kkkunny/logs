@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -177,150 +178,110 @@ func (self *Logger) checkItems(a ...any) *linkedhashmap.LinkedHashMap[string, st
 	return items
 }
 
-// Debug 输出Debug信息
-func (self *Logger) Debug(skip uint, a ...any) error {
+// 打印
+func (self *Logger) print(level LogLevel, skip uint, a ...any) error {
 	items := self.checkItems(a...)
-	if self.level > LogLevelDebug {
+	if self.level > level {
 		return nil
 	}
-	return self.outputByStack(LogLevelDebug, skip+1, items)
+	return self.outputByStack(level, skip+1, items)
+}
+
+// 格式化打印
+func (self *Logger) printf(level LogLevel, skip uint, f string, a ...any) error {
+	return self.print(level, skip+1, "msg", fmt.Sprintf(f, a...))
+}
+
+// 打印异常
+func (self *Logger) printError(level LogLevel, skip uint, err error) error {
+	var logerr Error
+	if errors.As(err, &logerr){
+		return self.printLogError(level, logerr)
+	}else{
+		return self.print(level, skip+1, "error", err.Error())
+	}
+}
+
+// 打印带栈异常
+func (self *Logger) printLogError(level LogLevel, err Error) error {
+	if self.level > level {
+		return nil
+	}
+
+	stacks := err.Stacks()
+
+	var stackBuffer strings.Builder
+	stackBuffer.WriteByte('\n')
+	for i, s := range stacks {
+		stackBuffer.WriteString(fmt.Sprintf("\t%s:%d", s.File, s.Line))
+		if i < len(stacks)-1 {
+			stackBuffer.WriteByte('\n')
+		}
+	}
+
+	values := linkedhashmap.NewLinkedHashMap[string, string]()
+	values.Set("error", err.Error())
+	values.Set("stack", stackBuffer.String())
+	stack := stacks[len(stacks)-1]
+	return self.output(level, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
+}
+
+// Debug 输出Debug信息
+func (self *Logger) Debug(skip uint, a ...any) error {
+	return self.print(LogLevelDebug, skip+1, a...)
 }
 
 // Debugf 输出Debugf格式化信息
 func (self *Logger) Debugf(skip uint, f string, a ...any) error {
-	return self.Debug(skip+1, "msg", fmt.Sprintf(f, a...))
+	return self.printf(LogLevelDebug, skip+1, f, a...)
 }
 
 // DebugError 输出Debug异常信息
-func (self *Logger) DebugError(err Error) error {
-	if self.level > LogLevelDebug {
-		return nil
-	}
-	stacks := err.Stacks()
-
-	var stackBuffer strings.Builder
-	stackBuffer.WriteByte('\n')
-	for i, s := range stacks{
-		stackBuffer.WriteString(fmt.Sprintf("\t%s:%d", s.File, s.Line))
-		if i < len(stacks) - 1{
-			stackBuffer.WriteByte('\n')
-		}
-	}
-
-	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("error", err.Error())
-	values.Set("stack", stackBuffer.String())
-	stack := stacks[len(stacks)-1]
-	return self.output(LogLevelDebug, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
+func (self *Logger) DebugError(skip uint, err error) error {
+	return self.printError(LogLevelDebug, skip+1, err)
 }
 
 // Info 输出Info信息
 func (self *Logger) Info(skip uint, a ...any) error {
-	items := self.checkItems(a...)
-	if self.level > LogLevelInfo {
-		return nil
-	}
-	return self.outputByStack(LogLevelInfo, skip+1, items)
+	return self.print(LogLevelInfo, skip+1, a...)
 }
 
 // Infof 输出Infof格式化信息
 func (self *Logger) Infof(skip uint, f string, a ...any) error {
-	return self.Info(skip+1, "msg", fmt.Sprintf(f, a...))
+	return self.printf(LogLevelInfo, skip+1, f, a...)
 }
 
 // InfoError 输出Info异常信息
-func (self *Logger) InfoError(err Error) error {
-	if self.level > LogLevelInfo {
-		return nil
-	}
-	stacks := err.Stacks()
-
-	var stackBuffer strings.Builder
-	stackBuffer.WriteByte('\n')
-	for i, s := range stacks{
-		stackBuffer.WriteString(fmt.Sprintf("\t%s:%d", s.File, s.Line))
-		if i < len(stacks) - 1{
-			stackBuffer.WriteByte('\n')
-		}
-	}
-
-	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("error", err.Error())
-	values.Set("stack", stackBuffer.String())
-	stack := stacks[len(stacks)-1]
-	return self.output(LogLevelInfo, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
+func (self *Logger) InfoError(skip uint, err error) error {
+	return self.printError(LogLevelInfo, skip+1, err)
 }
 
 // Warn 输出Warn信息
 func (self *Logger) Warn(skip uint, a ...any) error {
-	items := self.checkItems(a...)
-	if self.level > LogLevelWarn {
-		return nil
-	}
-	return self.outputByStack(LogLevelWarn, skip+1, items)
+	return self.print(LogLevelWarn, skip+1, a...)
 }
 
 // Warnf 输出Warnf格式化信息
 func (self *Logger) Warnf(skip uint, f string, a ...any) error {
-	return self.Warn(skip+1, "msg", fmt.Sprintf(f, a...))
+	return self.printf(LogLevelWarn, skip+1, f, a...)
 }
 
 // WarnError 输出Warn异常信息
-func (self *Logger) WarnError(err Error) error {
-	if self.level > LogLevelWarn {
-		return nil
-	}
-	stacks := err.Stacks()
-
-	var stackBuffer strings.Builder
-	stackBuffer.WriteByte('\n')
-	for i, s := range stacks{
-		stackBuffer.WriteString(fmt.Sprintf("\t%s:%d", s.File, s.Line))
-		if i < len(stacks) - 1{
-			stackBuffer.WriteByte('\n')
-		}
-	}
-
-	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("error", err.Error())
-	values.Set("stack", stackBuffer.String())
-	stack := stacks[len(stacks)-1]
-	return self.output(LogLevelWarn, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
+func (self *Logger) WarnError(skip uint, err error) error {
+	return self.printError(LogLevelWarn, skip+1, err)
 }
 
 // Error 输出Error信息
 func (self *Logger) Error(skip uint, a ...any) error {
-	items := self.checkItems(a...)
-	if self.level > LogLevelError {
-		return nil
-	}
-	return self.outputByStack(LogLevelError, skip+1, items)
+	return self.print(LogLevelError, skip+1, a...)
 }
 
 // Errorf 输出Errorf格式化信息
 func (self *Logger) Errorf(skip uint, f string, a ...any) error {
-	return self.Error(skip+1, "msg", fmt.Sprintf(f, a...))
+	return self.printf(LogLevelError, skip+1, f, a...)
 }
 
 // ErrorError 输出Error异常信息
-func (self *Logger) ErrorError(err Error) error {
-	if self.level > LogLevelError {
-		return nil
-	}
-	stacks := err.Stacks()
-
-	var stackBuffer strings.Builder
-	stackBuffer.WriteByte('\n')
-	for i, s := range stacks{
-		stackBuffer.WriteString(fmt.Sprintf("\t%s:%d", s.File, s.Line))
-		if i < len(stacks) - 1{
-			stackBuffer.WriteByte('\n')
-		}
-	}
-
-	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("error", err.Error())
-	values.Set("stack", stackBuffer.String())
-	stack := stacks[len(stacks)-1]
-	return self.output(LogLevelError, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
+func (self *Logger) ErrorError(skip uint, err error) error {
+	return self.printError(LogLevelError, skip+1, err)
 }
