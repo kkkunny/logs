@@ -10,6 +10,7 @@ import (
 type Error interface {
 	error
 	Stack() StackFrame
+	Unwrap() error
 }
 
 type logError struct {
@@ -64,4 +65,8 @@ func (self *logError) Error() string {
 // Stack 获取栈帧信息
 func (self *logError) Stack() StackFrame {
 	return self.stack
+}
+
+func (self *logError) Unwrap() error {
+	return self.err
 }
