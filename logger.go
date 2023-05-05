@@ -147,13 +147,14 @@ func (self *Logger) Debugf(skip uint, f string, a ...any) error {
 }
 
 // DebugError 输出Debug异常信息
-func (self *Logger) DebugError(e *Error) error {
+func (self *Logger) DebugError(err Error) error {
 	if self.level > LogLevelDebug {
 		return nil
 	}
 	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("msg", e.Error())
-	return self.output(LogLevelDebug, fmt.Sprintf("%s:%d", e.stack.File, e.stack.Line), values)
+	values.Set("msg", err.Error())
+	stack := err.Stack()
+	return self.output(LogLevelDebug, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
 }
 
 // Info 输出Info信息
@@ -171,13 +172,14 @@ func (self *Logger) Infof(skip uint, f string, a ...any) error {
 }
 
 // InfoError 输出Info异常信息
-func (self *Logger) InfoError(e *Error) error {
+func (self *Logger) InfoError(err Error) error {
 	if self.level > LogLevelInfo {
 		return nil
 	}
 	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("msg", e.Error())
-	return self.output(LogLevelInfo, fmt.Sprintf("%s:%d", e.stack.File, e.stack.Line), values)
+	values.Set("msg", err.Error())
+	stack := err.Stack()
+	return self.output(LogLevelInfo, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
 }
 
 // Warn 输出Warn信息
@@ -195,13 +197,14 @@ func (self *Logger) Warnf(skip uint, f string, a ...any) error {
 }
 
 // WarnError 输出Warn异常信息
-func (self *Logger) WarnError(e *Error) error {
+func (self *Logger) WarnError(err Error) error {
 	if self.level > LogLevelWarn {
 		return nil
 	}
 	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("msg", e.Error())
-	return self.output(LogLevelWarn, fmt.Sprintf("%s:%d", e.stack.File, e.stack.Line), values)
+	values.Set("msg", err.Error())
+	stack := err.Stack()
+	return self.output(LogLevelWarn, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
 }
 
 // Error 输出Error信息
@@ -219,11 +222,12 @@ func (self *Logger) Errorf(skip uint, f string, a ...any) error {
 }
 
 // ErrorError 输出Error异常信息
-func (self *Logger) ErrorError(e *Error) error {
+func (self *Logger) ErrorError(err Error) error {
 	if self.level > LogLevelError {
 		return nil
 	}
 	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("msg", e.Error())
-	return self.output(LogLevelError, fmt.Sprintf("%s:%d", e.stack.File, e.stack.Line), values)
+	values.Set("msg", err.Error())
+	stack := err.Stack()
+	return self.output(LogLevelError, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
 }

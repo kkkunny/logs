@@ -7,56 +7,61 @@ import (
 )
 
 // Error 异常
-type Error struct {
+type Error interface {
+	error
+	Stack() StackFrame
+}
+
+type logError struct {
 	stack StackFrame
 	err   error
 }
 
-// WrapError 包装异常
-func WrapError(e error) *Error {
-	_, file, line, _ := runtime.Caller(1)
-	return &Error{
+func newLogError(skip uint, err error) *logError {
+	_, file, line, _ := runtime.Caller(int(skip) + 1)
+	return &logError{
 		stack: StackFrame{
 			File: file,
 			Line: uint(line),
 		},
-		err: e,
+		err: err,
 	}
 }
 
-// NewError 新建异常
-func NewError(f string, a ...any) *Error {
-	_, file, line, _ := runtime.Caller(1)
-	return &Error{
-		stack: StackFrame{
-			File: file,
-			Line: uint(line),
-		},
-		err: fmt.Errorf(f, a...),
+// ErrorWrap 包装异常
+func ErrorWrap(err error) Error {
+	if err == nil {
+		return nil
 	}
+	var logErr Error
+	if errors.As(err, &logErr) {
+		return logErr
+	}
+	return newLogError(1, err)
 }
 
-func (self *Error) Error() string {
+// ErrorWith 包装异常
+func ErrorWith[T any](v T, err error) (T, Error) {
+	if err == nil {
+		return v, nil
+	}
+	var logErr Error
+	if errors.As(err, &logErr) {
+		return v, logErr
+	}
+	return v, newLogError(1, err)
+}
+
+// Errorf 新建异常
+func Errorf(f string, a ...any) Error {
+	return newLogError(1, fmt.Errorf(f, a...))
+}
+
+func (self *logError) Error() string {
 	return self.err.Error()
 }
 
 // Stack 获取栈帧信息
-func (self *Error) Stack() StackFrame {
+func (self *logError) Stack() StackFrame {
 	return self.stack
-}
-
-// Stacks 获取所有栈帧信息
-func (self *Error) Stacks() (stacks []StackFrame) {
-	var err *Error
-	var cursor error = self
-	for errors.As(cursor, &err) {
-		stacks = append(stacks, err.Stack())
-		cursor = err.err
-	}
-	return stacks
-}
-
-// SubError 获取子异常信息
-func (self *Error) SubError() error {
-	return self.err
 }
