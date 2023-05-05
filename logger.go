@@ -19,6 +19,7 @@ type LogLevel uint8
 
 const (
 	LogLevelDebug LogLevel = iota // debug
+	LogLevelTrace                 // trace
 	LogLevelInfo                  // info
 	LogLevelWarn                  // warn
 	LogLevelError                 // error
@@ -26,6 +27,7 @@ const (
 
 var logLevelStringMap = [...]string{
 	LogLevelDebug: " DEBUG ",
+	LogLevelTrace: " TRACE ",
 	LogLevelInfo:  " INFO  ",
 	LogLevelWarn:  " WARN  ",
 	LogLevelError: " ERROR ",
@@ -33,16 +35,18 @@ var logLevelStringMap = [...]string{
 
 var logLevelColorMap = [...]color.Color{
 	LogLevelDebug: color.Blue,
+	LogLevelTrace: color.Cyan,
 	LogLevelInfo:  color.Green,
 	LogLevelWarn:  color.Yellow,
 	LogLevelError: color.Red,
 }
 
 var logLevelStyleMap = [...]color.Style{
-	LogLevelDebug: color.New(color.White, color.BgBlue),
-	LogLevelInfo:  color.New(color.White, color.BgGreen),
-	LogLevelWarn:  color.New(color.White, color.BgYellow),
-	LogLevelError: color.New(color.White, color.BgRed),
+	LogLevelDebug: color.New(color.OpBold, color.White, color.BgBlue),
+	LogLevelTrace: color.New(color.OpBold, color.White, color.BgCyan),
+	LogLevelInfo:  color.New(color.OpBold, color.White, color.BgGreen),
+	LogLevelWarn:  color.New(color.OpBold, color.White, color.BgYellow),
+	LogLevelError: color.New(color.OpBold, color.White, color.BgRed),
 }
 
 // Logger 日志管理器
@@ -195,9 +199,9 @@ func (self *Logger) printf(level LogLevel, skip uint, f string, a ...any) error 
 // 打印异常
 func (self *Logger) printError(level LogLevel, skip uint, err error) error {
 	var logerr Error
-	if errors.As(err, &logerr){
+	if errors.As(err, &logerr) {
 		return self.printLogError(level, logerr)
-	}else{
+	} else {
 		return self.print(level, skip+1, "error", err.Error())
 	}
 }
@@ -241,12 +245,27 @@ func (self *Logger) DebugError(skip uint, err error) error {
 	return self.printError(LogLevelDebug, skip+1, err)
 }
 
+// Trace 输出Trace信息
+func (self *Logger) Trace(skip uint, a ...any) error {
+	return self.print(LogLevelTrace, skip+1, a...)
+}
+
+// Tracef 输出Trace格式化信息
+func (self *Logger) Tracef(skip uint, f string, a ...any) error {
+	return self.printf(LogLevelTrace, skip+1, f, a...)
+}
+
+// TraceError 输出Trace异常信息
+func (self *Logger) TraceError(skip uint, err error) error {
+	return self.printError(LogLevelTrace, skip+1, err)
+}
+
 // Info 输出Info信息
 func (self *Logger) Info(skip uint, a ...any) error {
 	return self.print(LogLevelInfo, skip+1, a...)
 }
 
-// Infof 输出Infof格式化信息
+// Infof 输出Info格式化信息
 func (self *Logger) Infof(skip uint, f string, a ...any) error {
 	return self.printf(LogLevelInfo, skip+1, f, a...)
 }
@@ -261,7 +280,7 @@ func (self *Logger) Warn(skip uint, a ...any) error {
 	return self.print(LogLevelWarn, skip+1, a...)
 }
 
-// Warnf 输出Warnf格式化信息
+// Warnf 输出Warn格式化信息
 func (self *Logger) Warnf(skip uint, f string, a ...any) error {
 	return self.printf(LogLevelWarn, skip+1, f, a...)
 }
@@ -276,7 +295,7 @@ func (self *Logger) Error(skip uint, a ...any) error {
 	return self.print(LogLevelError, skip+1, a...)
 }
 
-// Errorf 输出Errorf格式化信息
+// Errorf 输出Error格式化信息
 func (self *Logger) Errorf(skip uint, f string, a ...any) error {
 	return self.printf(LogLevelError, skip+1, f, a...)
 }
