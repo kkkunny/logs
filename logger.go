@@ -46,7 +46,6 @@ var logLevelStyleMap = [...]color.Style{
 
 // Logger 日志管理器
 type Logger struct {
-	isStdOut bool
 	level    LogLevel
 	writer   *log.Logger
 }
@@ -61,12 +60,7 @@ func DefaultLogger(debug bool) *Logger {
 
 // NewLogger 新建日志管理器
 func NewLogger(level LogLevel, writer io.Writer) *Logger {
-	var isStdOut bool
-	if writer == os.Stdout || writer == os.Stderr {
-		isStdOut = true
-	}
 	return &Logger{
-		isStdOut: isStdOut,
 		level:    level,
 		writer:   log.New(writer, "", 0),
 	}
@@ -89,7 +83,8 @@ func (self *Logger) output(level LogLevel, pos string, values *linkedhashmap.Lin
 
 	timeStr := time.Now().Format("2006-01-02 15:04:05")
 	var s string
-	if self.isStdOut {
+	writer := self.writer.Writer()
+	if writer == os.Stdout || writer == os.Stderr {
 		suffix := fmt.Sprintf(
 			"| %s | %s | %s",
 			timeStr,
