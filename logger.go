@@ -196,9 +196,21 @@ func (self *Logger) DebugError(err Error) error {
 	if self.level > LogLevelDebug {
 		return nil
 	}
+	stacks := err.Stacks()
+
+	var stackBuffer strings.Builder
+	stackBuffer.WriteByte('\n')
+	for i, s := range stacks{
+		stackBuffer.WriteString(fmt.Sprintf("\t%s:%d", s.File, s.Line))
+		if i < len(stacks) - 1{
+			stackBuffer.WriteByte('\n')
+		}
+	}
+
 	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("msg", err.Error())
-	stack := err.Stack()
+	values.Set("error", err.Error())
+	values.Set("stack", stackBuffer.String())
+	stack := stacks[len(stacks)-1]
 	return self.output(LogLevelDebug, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
 }
 
@@ -221,9 +233,21 @@ func (self *Logger) InfoError(err Error) error {
 	if self.level > LogLevelInfo {
 		return nil
 	}
+	stacks := err.Stacks()
+
+	var stackBuffer strings.Builder
+	stackBuffer.WriteByte('\n')
+	for i, s := range stacks{
+		stackBuffer.WriteString(fmt.Sprintf("\t%s:%d", s.File, s.Line))
+		if i < len(stacks) - 1{
+			stackBuffer.WriteByte('\n')
+		}
+	}
+
 	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("msg", err.Error())
-	stack := err.Stack()
+	values.Set("error", err.Error())
+	values.Set("stack", stackBuffer.String())
+	stack := stacks[len(stacks)-1]
 	return self.output(LogLevelInfo, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
 }
 
@@ -246,9 +270,21 @@ func (self *Logger) WarnError(err Error) error {
 	if self.level > LogLevelWarn {
 		return nil
 	}
+	stacks := err.Stacks()
+
+	var stackBuffer strings.Builder
+	stackBuffer.WriteByte('\n')
+	for i, s := range stacks{
+		stackBuffer.WriteString(fmt.Sprintf("\t%s:%d", s.File, s.Line))
+		if i < len(stacks) - 1{
+			stackBuffer.WriteByte('\n')
+		}
+	}
+
 	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("msg", err.Error())
-	stack := err.Stack()
+	values.Set("error", err.Error())
+	values.Set("stack", stackBuffer.String())
+	stack := stacks[len(stacks)-1]
 	return self.output(LogLevelWarn, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
 }
 
@@ -271,8 +307,20 @@ func (self *Logger) ErrorError(err Error) error {
 	if self.level > LogLevelError {
 		return nil
 	}
+	stacks := err.Stacks()
+
+	var stackBuffer strings.Builder
+	stackBuffer.WriteByte('\n')
+	for i, s := range stacks{
+		stackBuffer.WriteString(fmt.Sprintf("\t%s:%d", s.File, s.Line))
+		if i < len(stacks) - 1{
+			stackBuffer.WriteByte('\n')
+		}
+	}
+
 	values := linkedhashmap.NewLinkedHashMap[string, string]()
-	values.Set("msg", err.Error())
-	stack := err.Stack()
+	values.Set("error", err.Error())
+	values.Set("stack", stackBuffer.String())
+	stack := stacks[len(stacks)-1]
 	return self.output(LogLevelError, fmt.Sprintf("%s:%d", stack.File, stack.Line), values)
 }
