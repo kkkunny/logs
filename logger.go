@@ -18,35 +18,35 @@ import (
 type LogLevel uint8
 
 const (
-	LogLevelDebug LogLevel = iota // debug
-	LogLevelTrace                 // trace
-	LogLevelInfo                  // info
-	LogLevelWarn                  // warn
-	LogLevelError                 // error
+	LogLevelDebug   LogLevel = iota // debug
+	LogLevelInfo                    // info
+	LogLevelWarn                    // warn
+	LogLevelError                   // error
+	LogLevelKeyword                 // keyword
 )
 
 var logLevelStringMap = [...]string{
-	LogLevelDebug: " DEBUG ",
-	LogLevelTrace: " TRACE ",
-	LogLevelInfo:  " INFO  ",
-	LogLevelWarn:  " WARN  ",
-	LogLevelError: " ERROR ",
+	LogLevelDebug:   " DEBUG  ",
+	LogLevelInfo:    "  INFO  ",
+	LogLevelWarn:    "  WARN  ",
+	LogLevelError:   " ERROR  ",
+	LogLevelKeyword: " KEYWORD ",
 }
 
 var logLevelColorMap = [...]color.Color{
-	LogLevelDebug: color.Blue,
-	LogLevelTrace: color.Cyan,
-	LogLevelInfo:  color.Green,
-	LogLevelWarn:  color.Yellow,
-	LogLevelError: color.Red,
+	LogLevelDebug:   color.Blue,
+	LogLevelInfo:    color.Green,
+	LogLevelWarn:    color.Yellow,
+	LogLevelError:   color.Red,
+	LogLevelKeyword: color.Magenta,
 }
 
 var logLevelStyleMap = [...]color.Style{
-	LogLevelDebug: color.New(color.OpBold, color.White, color.BgBlue),
-	LogLevelTrace: color.New(color.OpBold, color.White, color.BgCyan),
-	LogLevelInfo:  color.New(color.OpBold, color.White, color.BgGreen),
-	LogLevelWarn:  color.New(color.OpBold, color.White, color.BgYellow),
-	LogLevelError: color.New(color.OpBold, color.White, color.BgRed),
+	LogLevelDebug:   color.New(color.OpBold, color.White, color.BgBlue),
+	LogLevelInfo:    color.New(color.OpBold, color.White, color.BgGreen),
+	LogLevelWarn:    color.New(color.OpBold, color.White, color.BgYellow),
+	LogLevelError:   color.New(color.OpBold, color.White, color.BgRed),
+	LogLevelKeyword: color.New(color.OpBold, color.White, color.BgMagenta),
 }
 
 // Logger 日志管理器
@@ -245,21 +245,6 @@ func (self *Logger) DebugError(skip uint, err error) error {
 	return self.printError(LogLevelDebug, skip+1, err)
 }
 
-// Trace 输出Trace信息
-func (self *Logger) Trace(skip uint, a ...any) error {
-	return self.print(LogLevelTrace, skip+1, a...)
-}
-
-// Tracef 输出Trace格式化信息
-func (self *Logger) Tracef(skip uint, f string, a ...any) error {
-	return self.printf(LogLevelTrace, skip+1, f, a...)
-}
-
-// TraceError 输出Trace异常信息
-func (self *Logger) TraceError(skip uint, err error) error {
-	return self.printError(LogLevelTrace, skip+1, err)
-}
-
 // Info 输出Info信息
 func (self *Logger) Info(skip uint, a ...any) error {
 	return self.print(LogLevelInfo, skip+1, a...)
@@ -303,4 +288,19 @@ func (self *Logger) Errorf(skip uint, f string, a ...any) error {
 // ErrorError 输出Error异常信息
 func (self *Logger) ErrorError(skip uint, err error) error {
 	return self.printError(LogLevelError, skip+1, err)
+}
+
+// Keyword 输出Keyword信息
+func (self *Logger) Keyword(skip uint, a ...any) error {
+	return self.print(LogLevelKeyword, skip+1, a...)
+}
+
+// Keywordf 输出Keyword格式化信息
+func (self *Logger) Keywordf(skip uint, f string, a ...any) error {
+	return self.printf(LogLevelKeyword, skip+1, f, a...)
+}
+
+// KeywordError 输出Keyword异常信息
+func (self *Logger) KeywordError(skip uint, err error) error {
+	return self.printError(LogLevelKeyword, skip+1, err)
 }
